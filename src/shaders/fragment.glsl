@@ -18,8 +18,8 @@ vec3 hsv2rgb(vec3 c)
 
 void main()
 {
-    float newRe = (gl_FragCoord.x - shiftX - 400) / (zoom * 800);
-    float newIm = (gl_FragCoord.y + shiftY - 400) / (zoom * 800);
+    float newRe = (gl_FragCoord.x - zoom * shiftX - 400) / (zoom * 800);
+    float newIm = (gl_FragCoord.y + zoom * shiftY - 400) / (zoom * 800);
 
     int i;
     for (i = 0; i < iterations; i++) {
