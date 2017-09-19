@@ -126,8 +126,8 @@ class Fractal : public Drawable
 
     void move(float dx, float dy) override
     {
-        shiftX += dx;
-        shiftY += dy;
+        shiftX += dx / zoomVal;
+        shiftY += dy / zoomVal;
     }
 
     void setIterations(int value)
