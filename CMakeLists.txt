@@ -26,8 +26,6 @@ MESSAGE(${APP_SOURCES})
 
 include_directories(include)
 
-add_definitions(-DVERTEX_SHADER_PATH="src/shaders/vertex.glsl")
-add_definitions(-DFRAGMENT_SHADER_PATH="src/shaders/fragment.glsl")
 set(CMAKE_CXX_FLAGS "-std=c++11 -O0 -Wall -Wextra -g")
 
 # Compile a target using NanoGUI
@@ -37,3 +35,6 @@ add_executable(app ${APP_SOURCES})
 # against NanoGUI, we need to link against those as well.
 target_link_libraries(app nanogui ${NANOGUI_EXTRA_LIBS})
 
+find_package(Boost COMPONENTS system filesystem REQUIRED)
+
+target_link_libraries(app  ${Boost_FILESYSTEM_LIBRARY}  ${Boost_SYSTEM_LIBRARY})

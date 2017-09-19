@@ -2,10 +2,16 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <stdlib.h>
+
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
 
 namespace my
 {
-GLuint compileShader(GLenum type, const char *shaderSourceName)
+GLuint compileShader(GLenum type, const std::string &shaderSourceName)
 {
     GLuint shaderId = glCreateShader(type);
 
@@ -42,8 +48,16 @@ GLuint compileShader(GLenum type, const char *shaderSourceName)
 GLuint loadProgram()
 {
     GLuint programId = glCreateProgram();
-    GLuint vs = compileShader(GL_VERTEX_SHADER, VERTEX_SHADER_PATH);
-    GLuint fs = compileShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_PATH);
+
+    const char *directory = getenv("SHADERS_DIR");
+    if (!directory)
+    {
+        std::cerr << "set SHADERS_DIR variable\n";
+        exit(1);
+    }
+
+    GLuint vs = compileShader(GL_VERTEX_SHADER, (fs::path(directory) / fs::path("vertex.glsl")).string());
+    GLuint fs = compileShader(GL_FRAGMENT_SHADER, (fs::path(directory) / fs::path("fragment.glsl")).string());
 
     glAttachShader(programId, vs);
     glAttachShader(programId, fs);
