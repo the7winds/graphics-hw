@@ -12,4 +12,4 @@ cmake .
 make -j 4
 ```
 ## Run
-Before running the application export path to shaders directory via SHADERS_DIR variable.
+Before running the application export path to shaders directory via `SHADERS_DIR` variable.
