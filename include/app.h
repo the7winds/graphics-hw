@@ -25,7 +25,7 @@ class Drawable
 {
   public:
     virtual void draw() = 0;
-    virtual void zoom(bool) = 0;
+    virtual void zoom(bool in, float x, float y) = 0;
     virtual void move(float dx, float dy) = 0;
 };
 
@@ -106,8 +106,11 @@ class Fractal : public Drawable
     
     Fractal();
     void draw() override;
-    void zoom(bool in) override
+    void zoom(bool in, float x, float y) override
     {
+        shiftX -= (x - 400) / zoomVal;
+        shiftY -= (y - 400) / zoomVal;
+
         if (in)
         {
             zoomVal /= ZOOM_K;
@@ -122,6 +125,9 @@ class Fractal : public Drawable
                 zoomVal = ZOOM_MAX;
             }
         }
+
+        shiftX += (x - 400) / zoomVal;
+        shiftY += (y - 400) / zoomVal;
     }
 
     void move(float dx, float dy) override

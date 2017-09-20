@@ -77,7 +77,7 @@ bool my::Screen::scrollCallbackEvent(double x, double y)
 {
     if (!screen->scrollCallbackEvent(x, y))
     {
-        content->zoom(y > 0);
+        content->zoom(y > 0, this->x, this->y);
     }
     return true;
 }
