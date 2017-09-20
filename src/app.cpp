@@ -2,12 +2,23 @@
 
 #include "shader.hpp"
 
+struct gimp_image
+{
+    unsigned int width;
+    unsigned int height;
+    unsigned int bytes_per_pixel; /* 2:RGB16, 3:RGB, 4:RGBA */
+    unsigned char pixel_data[256 * 1 * 2 + 1];
+};
+
+extern const struct gimp_image gimp_texture;
+
 my::Fractal::Fractal()
 {
     program = loadProgram();
 
     glGenBuffers(1, &vbuffer);
     glGenVertexArrays(1, &varrays);
+    glGenTextures(1, &texture);
 }
 
 void my::Fractal::draw()
@@ -20,6 +31,11 @@ void my::Fractal::draw()
     glBindVertexArray(varrays);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Point), (GLvoid *)0);
     glEnableVertexAttribArray(0);
+
+    glBindTexture(GL_TEXTURE_1D, texture);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, gimp_texture.width, 0, GL_RGBA, GL_UNSIGNED_BYTE, gimp_texture.pixel_data);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
     glUniform1i(glGetUniformLocation(program, "iterations"), iterations);
     glUniform1f(glGetUniformLocation(program, "reZ"), reZ);

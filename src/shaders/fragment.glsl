@@ -1,6 +1,6 @@
 #version 330
 
-out vec3 out_color;
+out vec4 out_color;
 
 uniform int iterations;
 uniform float reZ;
@@ -8,6 +8,8 @@ uniform float imZ;
 uniform float zoom;
 uniform float shiftX;
 uniform float shiftY;
+uniform sampler1D tex;
+
 
 vec3 hsv2rgb(vec3 c)
 {
@@ -36,5 +38,5 @@ void main()
 
     float c = float(i) / float(iterations);
 
-    out_color = hsv2rgb(vec3(c, 1, 1));
+    out_color = texture(tex, c);
 }

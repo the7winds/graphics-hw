@@ -20,7 +20,7 @@ include_directories(nanogui/ext/glfw/include)
 include_directories(nanogui/ext/nanovg/src)
 include_directories(nanogui/ext/eigen)
 
-file(GLOB APP_SOURCES src/*.cpp)
+file(GLOB APP_SOURCES src/*.cpp src/*.c)
 
 MESSAGE(${APP_SOURCES})
 

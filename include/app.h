@@ -88,6 +88,7 @@ class Fractal : public Drawable
     GLuint program;
     GLuint vbuffer;
     GLuint varrays;
+    GLuint texture;
 
     Point points[4] = {
         {-1.0f, -1.0f},
