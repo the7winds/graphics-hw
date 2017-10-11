@@ -1,6 +1,5 @@
 #version 130
 
-uniform vec4 torch;
 uniform mat4 camera;
 uniform mat4 rotate;
 

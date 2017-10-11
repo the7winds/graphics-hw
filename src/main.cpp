@@ -122,11 +122,12 @@ int main()
 
     glClearColor(0.0, 0.1, 0.2, 1.0);
 
-    GLuint program = loadProgram();
+    GLuint program = loadProgram("general/vertex.glsl", "general/fragment.glsl");
 
     glm::mat4 camera = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
     glm::vec3 eye = glm::vec3(0.0f, -0.1f, -0.5f);
     camera = glm::translate(camera, eye);
+
     Object object("objects/stanford_bunny.obj");
     object.setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 

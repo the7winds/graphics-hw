@@ -43,14 +43,14 @@ GLuint compileShader(GLenum type, const std::string &shaderSourceName)
     return shaderId;
 }
 
-GLuint loadProgram()
+GLuint loadProgram(const std::string& vertexFilename, const std::string& fragmentFilename)
 {
     GLuint programId = glCreateProgram();
 
     fs::path shaders(SHADERS_DIR);
 
-    GLuint vs = compileShader(GL_VERTEX_SHADER, (shaders / fs::path("vertex.glsl")).string());
-    GLuint fs = compileShader(GL_FRAGMENT_SHADER, (shaders / fs::path("fragment.glsl")).string());
+    GLuint vs = compileShader(GL_VERTEX_SHADER, (shaders / fs::path(vertexFilename)).string());
+    GLuint fs = compileShader(GL_FRAGMENT_SHADER, (shaders / fs::path(fragmentFilename)).string());
 
     glAttachShader(programId, vs);
     glAttachShader(programId, fs);
