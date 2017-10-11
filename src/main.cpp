@@ -16,7 +16,7 @@ class Object
 {
     std::vector<float> vertices;
     std::vector<short> indices;
-    std::vector<float> color;
+    glm::vec4 color;
 
     GLuint vertexBuffer;
     GLuint indexBuffer;
@@ -40,6 +40,8 @@ public:
         rotate = glm::rotate(rotate, angle, glm::vec3(0, 1, 0));
 
         glUniformMatrix4fv(glGetUniformLocation(program, "rotate"), 1, GL_FALSE, glm::value_ptr(rotate));
+
+        glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(color));
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
@@ -70,7 +72,6 @@ public:
                 for (int i = 0; i < 3; ++i) {
                     iline >> x;
                     vertices.push_back(x);
-                    color.push_back(0.5);
                 }
             } else if (t == 'f') {
                 for (int i = 0; i < 3; ++i) {
@@ -93,10 +94,10 @@ public:
         glGenBuffers(1, &indexBuffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLshort), &indices[0], GL_STATIC_DRAW);
+    }
 
-        glGenBuffers(1, &colorBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-        glBufferData(GL_ARRAY_BUFFER, color.size() * sizeof(GLfloat), &color[0], GL_STATIC_DRAW);
+    void setColor(const glm::vec4& c) {
+        color = c;
     }
 };
 
@@ -124,9 +125,13 @@ int main()
     GLuint program = loadProgram();
 
     glm::mat4 camera = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-    glm::vec3 eye = glm::vec3(0.0f, -0.1f, -0.3f);
+    glm::vec3 eye = glm::vec3(0.0f, -0.1f, -0.5f);
     camera = glm::translate(camera, eye);
     Object object("objects/stanford_bunny.obj");
+    object.setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+    Object plane("objects/plane.obj");
+    plane.setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     glUseProgram(program);
 
@@ -134,10 +139,10 @@ int main()
     glUniformMatrix4fv(posCamera, 1, GL_FALSE, glm::value_ptr(camera));
 
     GLint posTorch = glGetUniformLocation(program, "torch");
-    glUniform4fv(posTorch, 1, glm::value_ptr(glm::vec3(-10, 0, 0)));
+    glUniform4fv(posTorch, 1, glm::value_ptr(glm::vec3(-5, 1, 0)));
     
     GLint posEye = glGetUniformLocation(program, "eye");
-    glUniform4fv(posEye, 1, glm::value_ptr(-eye));
+    glUniform4fv(posEye, 1, glm::value_ptr(eye));
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -146,6 +151,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
+        plane.draw(program);
         object.draw(program);
 
         /* Swap front and back buffers */
