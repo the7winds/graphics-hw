@@ -46,14 +46,10 @@ class Cube
     GLuint vertexBuffer;
     GLuint indexBuffer;
     GLuint colorBuffer;
-    GLuint vertexArray;
 
   public:
     Cube() 
     {
-        glGenVertexArrays(1, &vertexArray);
-        glBindVertexArray(vertexArray);
-
         glGenBuffers(1, &vertexBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), &vertices[0], GL_STATIC_DRAW);
@@ -68,9 +64,7 @@ class Cube
     }
 
     void draw(GLint program)
-    {
-        glBindVertexArray(vertexArray);
-        
+    {        
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         GLint posPos = glGetAttribLocation(program, "inPos");
         glVertexAttribPointer(posPos, 3, GL_FLOAT, false, 0, nullptr);
@@ -122,6 +116,9 @@ int main()
 
     GLint posCamera = glGetUniformLocation(program, "camera");
     glUniformMatrix4fv(posCamera, 1, GL_FALSE, glm::value_ptr(camera));
+
+    GLint posTorch = glGetUniformLocation(program, "torch");
+    glUniform4fv(posTorch, 1, glm::value_ptr(glm::vec3(-10, 10, 10)));
     
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
