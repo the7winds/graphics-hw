@@ -5,6 +5,8 @@ add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Werror)
 
+add_definitions(-DSHADERS_DIR="shaders")
+
 add_executable(scene src/main.cpp)
 
 find_package(PkgConfig REQUIRED)

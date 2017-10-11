@@ -47,15 +47,10 @@ GLuint loadProgram()
 {
     GLuint programId = glCreateProgram();
 
-    const char *directory = getenv("SHADERS_DIR");
-    if (!directory)
-    {
-        std::cerr << "set SHADERS_DIR variable\n";
-        exit(1);
-    }
+    fs::path shaders(SHADERS_DIR);
 
-    GLuint vs = compileShader(GL_VERTEX_SHADER, (fs::path(directory) / fs::path("vertex.glsl")).string());
-    GLuint fs = compileShader(GL_FRAGMENT_SHADER, (fs::path(directory) / fs::path("fragment.glsl")).string());
+    GLuint vs = compileShader(GL_VERTEX_SHADER, (shaders / fs::path("vertex.glsl")).string());
+    GLuint fs = compileShader(GL_FRAGMENT_SHADER, (shaders / fs::path("fragment.glsl")).string());
 
     glAttachShader(programId, vs);
     glAttachShader(programId, fs);
