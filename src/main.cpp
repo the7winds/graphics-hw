@@ -22,7 +22,7 @@ class Object
     GLuint indexBuffer;
     GLuint colorBuffer;
 
-public:
+  public:
     void draw(GLuint program)
     {
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -47,45 +47,54 @@ public:
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
     }
 
-    Object(const std::string& filename)
+    Object(const std::string &filename)
     {
         parse(filename);
         init_buffers();
     }
 
-    void parse(const std::string& filename) 
+    void parse(const std::string &filename)
     {
         std::ifstream in(filename);
         std::string line;
-        while (getline(in, line)) {
-            if (line[0] == '#') {
+        while (getline(in, line))
+        {
+            if (line[0] == '#')
+            {
                 continue;
             }
-            
+
             std::istringstream iline(line);
 
             char t;
             iline >> t;
 
-            if (t == 'v') {
+            if (t == 'v')
+            {
                 float x;
-                for (int i = 0; i < 3; ++i) {
+                for (int i = 0; i < 3; ++i)
+                {
                     iline >> x;
                     vertices.push_back(x);
                 }
-            } else if (t == 'f') {
-                for (int i = 0; i < 3; ++i) {
+            }
+            else if (t == 'f')
+            {
+                for (int i = 0; i < 3; ++i)
+                {
                     short a;
                     iline >> a;
                     indices.push_back(a - 1);
                 }
-            } else {
+            }
+            else
+            {
                 std::cerr << "unknown type \"" << t << "\"\n";
             }
         }
     }
 
-    void init_buffers() 
+    void init_buffers()
     {
         glGenBuffers(1, &vertexBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -96,7 +105,8 @@ public:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLshort), &indices[0], GL_STATIC_DRAW);
     }
 
-    void setColor(const glm::vec4& c) {
+    void setColor(const glm::vec4 &c)
+    {
         color = c;
     }
 };
@@ -141,7 +151,7 @@ int main()
 
     GLint posTorch = glGetUniformLocation(program, "torch");
     glUniform4fv(posTorch, 1, glm::value_ptr(glm::vec3(-5, 1, 0)));
-    
+
     GLint posEye = glGetUniformLocation(program, "eye");
     glUniform4fv(posEye, 1, glm::value_ptr(eye));
 
