@@ -20,7 +20,6 @@ class Object
 
     GLuint vertexBuffer;
     GLuint indexBuffer;
-    GLuint colorBuffer;
 
   public:
     void draw(GLuint program)
@@ -30,17 +29,11 @@ class Object
         glVertexAttribPointer(posPos, 3, GL_FLOAT, false, 0, nullptr);
         glEnableVertexAttribArray(posPos);
 
-        glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-        GLint posColor = glGetAttribLocation(program, "inColor");
-        glVertexAttribPointer(posColor, 3, GL_FLOAT, false, 0, nullptr);
-        glEnableVertexAttribArray(posColor);
-
         glm::mat4 rotate = glm::mat4(1.0f);
         float angle = std::chrono::steady_clock::now().time_since_epoch().count() / 1000000000.0f;
         rotate = glm::rotate(rotate, angle, glm::vec3(0, 1, 0));
 
         glUniformMatrix4fv(glGetUniformLocation(program, "rotate"), 1, GL_FALSE, glm::value_ptr(rotate));
-
         glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(color));
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
