@@ -1,3 +1,4 @@
+//#version 330 core
 #version 130
 
 uniform vec3 eye;

@@ -25,15 +25,15 @@ class Object
     void draw(GLuint program)
     {
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        GLint posPos = glGetAttribLocation(program, "inPos");
-        glVertexAttribPointer(posPos, 3, GL_FLOAT, false, 0, nullptr);
-        glEnableVertexAttribArray(posPos);
+        GLint locPos = glGetAttribLocation(program, "inPos");
+        glVertexAttribPointer(locPos, 3, GL_FLOAT, false, 0, nullptr);
+        glEnableVertexAttribArray(locPos);
 
-        glm::mat4 rotate = glm::mat4(1.0f);
+        glm::mat4 M = glm::mat4(1.0f);
         float angle = std::chrono::steady_clock::now().time_since_epoch().count() / 1000000000.0f;
-        rotate = glm::rotate(rotate, angle, glm::vec3(0, 1, 0));
+        M = glm::rotate(M, angle, glm::vec3(0, 1, 0));
 
-        glUniformMatrix4fv(glGetUniformLocation(program, "rotate"), 1, GL_FALSE, glm::value_ptr(rotate));
+        glUniformMatrix4fv(glGetUniformLocation(program, "M"), 1, GL_FALSE, glm::value_ptr(M));
         glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(color));
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -111,6 +111,13 @@ int main()
     /* Initialize the library */
     if (!glfwInit())
         return -1;
+/*
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+*/
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
@@ -127,9 +134,9 @@ int main()
 
     GLuint program = loadProgram("general/vertex.glsl", "general/fragment.glsl");
 
-    glm::mat4 camera = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-    glm::vec3 eye = glm::vec3(0.0f, -0.1f, -0.5f);
-    camera = glm::translate(camera, eye);
+    glm::mat4 P = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+    glm::vec3 eye = glm::vec3(-0.3, 0.3, -0.3);
+    glm::mat4 V = glm::lookAt(eye, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
     Object object("objects/stanford_bunny.obj");
     object.setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -139,14 +146,14 @@ int main()
 
     glUseProgram(program);
 
-    GLint posCamera = glGetUniformLocation(program, "camera");
-    glUniformMatrix4fv(posCamera, 1, GL_FALSE, glm::value_ptr(camera));
+    GLint locCamera = glGetUniformLocation(program, "Camera");
+    glUniformMatrix4fv(locCamera, 1, GL_FALSE, glm::value_ptr(P * V));
 
-    GLint posTorch = glGetUniformLocation(program, "torch");
-    glUniform4fv(posTorch, 1, glm::value_ptr(glm::vec3(-5, 1, 0)));
+    GLint locTorch = glGetUniformLocation(program, "torch");
+    glUniform4fv(locTorch, 1, glm::value_ptr(glm::vec3(-5, 1, 0)));
 
-    GLint posEye = glGetUniformLocation(program, "eye");
-    glUniform4fv(posEye, 1, glm::value_ptr(eye));
+    GLint locEye = glGetUniformLocation(program, "eye");
+    glUniform4fv(locEye, 1, glm::value_ptr(eye));
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
