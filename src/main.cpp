@@ -18,12 +18,15 @@ class Object
     std::vector<short> indices;
     glm::vec4 color;
 
+    GLuint vao;
     GLuint vertexBuffer;
     GLuint indexBuffer;
 
   public:
     void draw(GLuint program)
     {
+        glBindVertexArray(vao);
+
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         GLint locPos = glGetAttribLocation(program, "inPos");
         glVertexAttribPointer(locPos, 3, GL_FLOAT, false, 0, nullptr);
@@ -89,6 +92,9 @@ class Object
 
     void init_buffers()
     {
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+
         glGenBuffers(1, &vertexBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), &vertices[0], GL_STATIC_DRAW);
@@ -111,13 +117,12 @@ int main()
     /* Initialize the library */
     if (!glfwInit())
         return -1;
-/*
+
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-*/
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
