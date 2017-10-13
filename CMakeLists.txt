@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 add_compile_options(-std=c++11)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
+add_compile_options(-O2)
 add_compile_options(-Werror)
 
 add_definitions(-DSHADERS_DIR="shaders")
