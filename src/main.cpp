@@ -124,6 +124,105 @@ class Object
     }
 };
 
+class ShadowLamp
+{
+    static const int S_Q = 2;
+
+    GLuint frameBuffer;
+    GLuint shadowTex;
+
+    glm::vec3 pos;
+    glm::vec3 dir;
+    GLfloat power;
+    GLfloat angle;
+public:
+    ShadowLamp(const glm::vec3& pos, const glm::vec3& dir, GLfloat power, GLfloat angle) : pos(pos), dir(dir), power(power), angle(angle)
+    {
+        glGenFramebuffers(1, &frameBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    
+        glGenTextures(1, &shadowTex);
+        glBindTexture(GL_TEXTURE_2D, shadowTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, S_Q * 640, S_Q * 480, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowTex, 0);
+    
+        glDrawBuffer(GL_NONE);
+    
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+            std::cerr << "can't create framebuffer";
+        }
+    }
+    
+    void setup(GLint shadowProgram, GLint program)
+    {
+        glm::mat4 P = glm::ortho<float>(-10, 10, -10, 10, -10, 30);
+        glm::mat4 V = glm::lookAt(pos, pos + dir, glm::vec3(0, 1, 0));
+        glm::mat4 shadowCamera = P * V;
+
+        glUseProgram(shadowProgram);
+        glUniformMatrix4fv(glGetUniformLocation(shadowProgram, "Camera"), 1, GL_FALSE, glm::value_ptr(shadowCamera));
+
+        glUseProgram(program);
+
+        GLint locShadowCamera = glGetUniformLocation(program, "ShadowCamera");
+        glUniformMatrix4fv(locShadowCamera, 1, GL_FALSE, glm::value_ptr(shadowCamera));
+
+        GLint locLampPos = glGetUniformLocation(program, "lampPos");
+        glUniform3fv(locLampPos, 1, glm::value_ptr(pos));
+    
+        GLint locLampDir = glGetUniformLocation(program, "lampDir");
+        glUniform3fv(locLampDir, 1, glm::value_ptr(glm::normalize(dir)));
+    
+        GLint locLampAngle = glGetUniformLocation(program, "lampAngle");
+        glUniform1f(locLampAngle, angle);
+    
+        GLint locLampPower = glGetUniformLocation(program, "lampPower");
+        glUniform1f(locLampPower, 50);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, shadowTex);
+        glUniform1i(glGetUniformLocation(program, "shadow"), 0);
+    }
+
+    void shadow(GLint shadowProgram)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        glViewport(0, 0, S_Q * 640, S_Q * 480);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glUseProgram(shadowProgram);
+    }
+};
+
+class AnimatedTorch
+{
+    glm::vec3 pos;
+    GLfloat radius;
+    GLfloat power;
+
+public:
+    AnimatedTorch(const glm::vec3& pos, GLfloat radius, GLfloat power) : pos(pos), radius(radius), power(power) {};
+    
+    void draw(GLint program)
+    {
+        using namespace std::chrono;
+        int time = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+        float dx = cos((float) time / 1e3);
+        float dz = sin((float) time / 1e3);
+        
+        GLint locTorchPower = glGetUniformLocation(program, "torchPower");
+        glUniform1f(locTorchPower, 20);
+        
+        GLint locTorchPos = glGetUniformLocation(program, "torchPos");
+        glUniform3fv(locTorchPos, 1, glm::value_ptr(pos + radius * glm::vec3(dx, 0, dz)));
+    }
+};
+
 int main()
 {
     /* Initialize the library */
@@ -151,8 +250,8 @@ int main()
 
     /* load objects */
 
-    Object bunny1(0.01, glm::vec4(1, 0, 0, 1), glm::vec4(0.5, 0.5, 0.5, 1), 1, "objects/cube.obj");//stanford_bunny.obj");
-    bunny1.scale(glm::vec3(1, 1, 1));
+    Object bunny1(0.01, glm::vec4(1, 0, 0, 1), glm::vec4(0.5, 0.5, 0.5, 1), 1, "objects/stanford_bunny.obj");
+    bunny1.scale(glm::vec3(10, 10, 10));
 
     Object bunny2(0.01, glm::vec4(0, 0, 1, 1), glm::vec4(1, 1, 1, 1), 100, "objects/stanford_bunny.obj");
     bunny2.scale(glm::vec3(10, 10, 10));
@@ -160,46 +259,17 @@ int main()
 
     Object plane(0, glm::vec4(0, 1, 0, 1), glm::vec4(0.1, 0.1, 0.1, 1), 1, "objects/plane.obj");
 
-    /* render shadow texture */
-
-    GLuint frameBuffer;
-    glGenFramebuffers(1, &frameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-
-    constexpr int S_Q = 2;
-
-    GLuint shadowTex;
-    glGenTextures(1, &shadowTex);
-    glBindTexture(GL_TEXTURE_2D, shadowTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, S_Q * 640, S_Q * 480, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowTex, 0);
-
-    glDrawBuffer(GL_NONE);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        std::cerr << "can't create framebuffer";
-    }
-
-    // Compute the MVP matrix from the light's point of view
-    glm::mat4 shadowP = glm::ortho<float>(-10, 10, -10, 10, -10, 30);
-    glm::vec3 shadowEye = glm::vec3(5, 5, 5);
-    glm::vec3 shadowDir = glm::vec3(0, 0, 0) - shadowEye;
-    glm::mat4 shadowV = glm::lookAt(shadowEye, shadowEye + shadowDir, glm::vec3(0, 1, 0));
-    glm::mat4 shadowCamera = shadowP * shadowV;
-
     GLuint shadowProgram = loadProgram("shadow/vertex.glsl", "shadow/fragment.glsl");
-    glUseProgram(shadowProgram);
-    glUniformMatrix4fv(glGetUniformLocation(shadowProgram, "Camera"), 1, GL_FALSE, glm::value_ptr(shadowCamera));
-
-    /* render picture */
     GLuint program = loadProgram("general/vertex.glsl", "general/fragment.glsl");
 
+    // setup lamp's uniforms
+    ShadowLamp lamp(glm::vec3(-5, 5, 5), glm::vec3(5, -5, -5), 50, 0.8);    
+    lamp.setup(shadowProgram, program);
+
+    // create a torch
+    AnimatedTorch torch(glm::vec3(0, 5, 0), 5, 50);
+
+    // configure camera
     glUseProgram(program);
     glm::mat4 P = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
     glm::vec3 eye = glm::vec3(0, 5, -5);
@@ -209,63 +279,30 @@ int main()
     GLint locCamera = glGetUniformLocation(program, "Camera");
     glUniformMatrix4fv(locCamera, 1, GL_FALSE, glm::value_ptr(camera));
 
-    // torch
-
-    GLint locTorchPos = glGetUniformLocation(program, "torchPos");
-    glUniform3fv(locTorchPos, 1, glm::value_ptr(glm::vec3(5, 5, 5)));
-
-    GLint locTorchPower = glGetUniformLocation(program, "torchPower");
-    glUniform1f(locTorchPower, 20);
-
-    // lamp
-
-    GLint locLampPos = glGetUniformLocation(program, "lampPos");
-    glUniform3fv(locLampPos, 1, glm::value_ptr(shadowEye));
-
-    GLint locLampDir = glGetUniformLocation(program, "lampDir");
-    glUniform3fv(locLampDir, 1, glm::value_ptr(glm::normalize(shadowDir)));
-
-    GLint locLampAngle = glGetUniformLocation(program, "lampAngle");
-    glUniform1f(locLampAngle, 0.8);
-
-    GLint locLampPower = glGetUniformLocation(program, "lampPower");
-    glUniform1f(locLampPower, 50);
-
     GLint locEye = glGetUniformLocation(program, "eye");
     glUniform3fv(locEye, 1, glm::value_ptr(eye));
-
-    GLint locShadowCamera = glGetUniformLocation(program, "ShadowCamera");
-    glUniformMatrix4fv(locShadowCamera, 1, GL_FALSE, glm::value_ptr(shadowCamera));
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, shadowTex);
-    glUniform1i(glGetUniformLocation(program, "shadow"), 0);
     
     glEnable(GL_DEPTH_TEST);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-        glViewport(0, 0, S_Q * 640, S_Q * 480);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glUseProgram(shadowProgram);
-
+        // evaluate shadow map
+        lamp.shadow(shadowProgram);
         plane.draw(shadowProgram);
         bunny1.draw(shadowProgram);
         bunny2.draw(shadowProgram);
 
-        ////////////
+        // render
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, 640, 480);
         glUseProgram(program);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUniform3fv(locTorchPos, 1, glm::value_ptr(glm::vec3(5, 5, 5 * cos((float)std::chrono::steady_clock::now().time_since_epoch().count() / 100000000.0))));
-
         plane.draw(program);
         bunny1.draw(program);
         bunny2.draw(program);
+        torch.draw(program);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

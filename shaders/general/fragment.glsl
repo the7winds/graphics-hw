@@ -25,8 +25,8 @@ void main()
     float d = texture(shadow, 0.5 * (1 + shadowPos.xy)).x;
     float K = 1.0;
     
-    if (0.5 * (1  + shadowPos.z) - d > 0.001) {
-        K = 0.5;
+    if (0.5 * (1  + shadowPos.z) - d > 0.0042) {
+        K = 0.1;
     }
 
     vec3 n = normalize(cross(dFdx(pos), dFdy(pos)));
