@@ -29,6 +29,8 @@ class Object
     glm::vec4 colorS;
     GLfloat powerS;
 
+    GLfloat animated = 1;
+
   public:
     void draw(GLuint program)
     {
@@ -39,7 +41,7 @@ class Object
         glVertexAttribPointer(locPos, 3, GL_FLOAT, false, 0, nullptr);
         glEnableVertexAttribArray(locPos);
 
-        M = glm::rotate(M, speed, glm::vec3(0, 1, 0));
+        M = glm::rotate(M, animated * speed, glm::vec3(0, 1, 0));
 
         glUniformMatrix4fv(glGetUniformLocation(program, "M"), 1, GL_FALSE, glm::value_ptr(M));
         glUniform4fv(glGetUniformLocation(program, "colorD"), 1, glm::value_ptr(colorD));
@@ -124,6 +126,11 @@ class Object
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLshort), &indices[0], GL_STATIC_DRAW);
     }
+
+    void setAnimated(bool animated)
+    {
+        this->animated = animated ? 1 : 0;
+    }
 };
 
 class ShadowLamp
@@ -138,11 +145,16 @@ class ShadowLamp
     GLfloat power;
     GLfloat angle;
 
+    GLfloat verticalAngle = -1;
+    GLfloat horizontalAngle = 2.2;
+
   public:
-    ShadowLamp(const glm::vec3 &pos, const glm::vec3 &dir, GLfloat power, GLfloat angle) : pos(pos), dir(dir), power(power), angle(angle)
+    ShadowLamp(const glm::vec3 &pos,GLfloat power, GLfloat angle) : pos(pos), power(power), angle(angle)
     {
         glGenFramebuffers(1, &frameBuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+        update();
 
         glGenTextures(1, &shadowTex);
         glBindTexture(GL_TEXTURE_2D, shadowTex);
@@ -199,6 +211,35 @@ class ShadowLamp
         glViewport(0, 0, S_Q * 640, S_Q * 480);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shadowProgram);
+
+    }
+    void update()
+    {
+        dir = glm::vec3(cos(verticalAngle) * sin(horizontalAngle), sin(verticalAngle), cos(verticalAngle) * cos(horizontalAngle));
+    }
+
+    void angleUp()
+    {
+        verticalAngle += 0.01;
+        update();
+    }
+
+    void angleDown()
+    {
+        verticalAngle -= 0.01;
+        update();
+    }
+
+    void angleRight()
+    {
+        horizontalAngle += 0.01;
+        update();
+    }
+
+    void angleLeft()
+    {
+        horizontalAngle -= 0.01;
+        update();
     }
 };
 
@@ -207,6 +248,9 @@ class AnimatedTorch
     glm::vec3 pos;
     GLfloat radius;
     GLfloat power;
+    float animated;
+    float dz = 0;
+    float dx = 1;
 
   public:
     AnimatedTorch(const glm::vec3 &pos, GLfloat radius, GLfloat power) : pos(pos), radius(radius), power(power){};
@@ -215,14 +259,22 @@ class AnimatedTorch
     {
         using namespace std::chrono;
         int time = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
-        float dx = cos((float)time / 1e3);
-        float dz = sin((float)time / 1e3);
+        if (animated)
+        {
+            dx = cos((float)time / 1e3);
+            dz = sin((float)time / 1e3);
+        }
 
         GLint locTorchPower = glGetUniformLocation(program, "torchPower");
         glUniform1f(locTorchPower, 20);
 
         GLint locTorchPos = glGetUniformLocation(program, "torchPos");
         glUniform3fv(locTorchPos, 1, glm::value_ptr(pos + radius * glm::vec3(dx, 0, dz)));
+    }
+
+    void setAnimated(bool animated)
+    {
+        this->animated = animated ? 1 : 0;
     }
 };
 
@@ -234,6 +286,7 @@ class Camera
     glm::mat4 camera;
     float verticalAngle = 0;
     float horizontalAngle = 0;
+    bool animationModel = true;
 
   public:
     Camera()
@@ -302,7 +355,10 @@ class UI
     float oldypos;
 
   public:
+    bool animationModel = false;
+    bool animationTorch = false;
     Camera camera;
+    ShadowLamp *shadowLamp;
 
     void onMouseButton(int button, int action)
     {
@@ -338,8 +394,9 @@ class UI
         camera.rotate(dx, dy);
     }
 
-    void onKey(int key)
+    void onKey(int key, int action)
     {
+
         if (key == GLFW_KEY_UP)
         {
             camera.dForward();
@@ -356,12 +413,40 @@ class UI
         {
             camera.dRight();
         }
+        else if (key == GLFW_KEY_H)
+        {
+            shadowLamp->angleLeft();
+        }
+        else if (key == GLFW_KEY_J)
+        {
+            shadowLamp->angleRight();
+        }
+        else if (key == GLFW_KEY_K)
+        {
+            shadowLamp->angleUp();
+        }
+        else if (key == GLFW_KEY_L)
+        {
+            shadowLamp->angleDown();
+        }
+        
+        if (action == GLFW_PRESS)
+        {
+            if (key == GLFW_KEY_1)
+            {
+                animationModel = !animationModel;
+            }
+            else if (key == GLFW_KEY_2)
+            {
+                animationTorch = !animationTorch;
+            }
+        }
     }
 } ui;
 
-void key_callback(GLFWwindow *, int key, int, int, int)
+void key_callback(GLFWwindow *, int key, int, int action, int)
 {
-    ui.onKey(key);
+    ui.onKey(key, action);
 }
 
 void cursor_pos_callback(GLFWwindow *, double xpos, double ypos)
@@ -414,8 +499,9 @@ int main()
     GLuint program = loadProgram("general/vertex.glsl", "general/fragment.glsl");
 
     // setup lamp's uniforms
-    ShadowLamp lamp(glm::vec3(-5, 5, 5), glm::vec3(5, -5, -5), 50, 0.8);
+    ShadowLamp lamp(glm::vec3(-5, 5, 5), 50, 0.8);
     lamp.setup(shadowProgram, program);
+    ui.shadowLamp = &lamp;
 
     // create a torch
     AnimatedTorch torch(glm::vec3(0, 5, 0), 5, 50);
@@ -433,6 +519,7 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         // evaluate shadow map
+        lamp.setup(shadowProgram, program);
         lamp.shadow(shadowProgram);
         plane.draw(shadowProgram);
         bunny1.draw(shadowProgram);
@@ -445,6 +532,10 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ui.camera.draw(program);
+
+        bunny1.setAnimated(ui.animationModel);
+        bunny2.setAnimated(ui.animationModel);
+        torch.setAnimated(ui.animationTorch);
 
         plane.draw(program);
         bunny1.draw(program);
