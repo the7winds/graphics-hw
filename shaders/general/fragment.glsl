@@ -23,11 +23,7 @@ in vec3 shadowPos;
 void main()
 {
     float d = texture(shadow, 0.5 * (1 + shadowPos.xy)).x;
-    float K = 1.0;
-    
-    if (0.5 * (1  + shadowPos.z) - d > 0.0042) {
-        K = 0.1;
-    }
+    float K = 1 - int(0.5 * (1  + shadowPos.z) - d > 0.0042);
 
     vec3 n = normalize(cross(dFdx(pos), dFdy(pos)));
 
@@ -35,10 +31,10 @@ void main()
 
     // lamp
     vec3 l = normalize(lampPos - pos);
-    float power = max(int(dot(-l, lampDir) > lampAngle), 0.3) * lampPower / pow(length(lampPos - pos), 2);
+    float power = int(dot(-l, lampDir) > lampAngle) * lampPower / pow(length(lampPos - pos), 2);
     vec4 diffuse = colorD * clamp(dot(n, l), 0, 1) * power;
 
-    gl_FragColor = diffuse;
+    gl_FragColor = K * diffuse;
 
     // torch
     l = normalize(torchPos - pos);
@@ -53,6 +49,4 @@ void main()
     vec4 spectacular = colorS * pow(clamp(dot(rl, er), 0, 1), powerS);
 
     gl_FragColor += spectacular;
-
-    gl_FragColor *= K;
 }
