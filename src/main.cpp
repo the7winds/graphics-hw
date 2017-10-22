@@ -9,6 +9,8 @@
 #include <chrono>
 #include <string>
 #include <sstream>
+#include <memory>
+#include <functional>
 
 #include "shader.hpp"
 
@@ -135,12 +137,13 @@ class ShadowLamp
     glm::vec3 dir;
     GLfloat power;
     GLfloat angle;
-public:
-    ShadowLamp(const glm::vec3& pos, const glm::vec3& dir, GLfloat power, GLfloat angle) : pos(pos), dir(dir), power(power), angle(angle)
+
+  public:
+    ShadowLamp(const glm::vec3 &pos, const glm::vec3 &dir, GLfloat power, GLfloat angle) : pos(pos), dir(dir), power(power), angle(angle)
     {
         glGenFramebuffers(1, &frameBuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-    
+
         glGenTextures(1, &shadowTex);
         glBindTexture(GL_TEXTURE_2D, shadowTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, S_Q * 640, S_Q * 480, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
@@ -148,17 +151,17 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    
+
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowTex, 0);
-    
+
         glDrawBuffer(GL_NONE);
-    
+
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
             std::cerr << "can't create framebuffer";
         }
     }
-    
+
     void setup(GLint shadowProgram, GLint program)
     {
         glm::mat4 P = glm::ortho<float>(-10, 10, -10, 10, -10, 30);
@@ -175,13 +178,13 @@ public:
 
         GLint locLampPos = glGetUniformLocation(program, "lampPos");
         glUniform3fv(locLampPos, 1, glm::value_ptr(pos));
-    
+
         GLint locLampDir = glGetUniformLocation(program, "lampDir");
         glUniform3fv(locLampDir, 1, glm::value_ptr(glm::normalize(dir)));
-    
+
         GLint locLampAngle = glGetUniformLocation(program, "lampAngle");
         glUniform1f(locLampAngle, angle);
-    
+
         GLint locLampPower = glGetUniformLocation(program, "lampPower");
         glUniform1f(locLampPower, 50);
 
@@ -205,23 +208,171 @@ class AnimatedTorch
     GLfloat radius;
     GLfloat power;
 
-public:
-    AnimatedTorch(const glm::vec3& pos, GLfloat radius, GLfloat power) : pos(pos), radius(radius), power(power) {};
-    
+  public:
+    AnimatedTorch(const glm::vec3 &pos, GLfloat radius, GLfloat power) : pos(pos), radius(radius), power(power){};
+
     void draw(GLint program)
     {
         using namespace std::chrono;
         int time = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
-        float dx = cos((float) time / 1e3);
-        float dz = sin((float) time / 1e3);
-        
+        float dx = cos((float)time / 1e3);
+        float dz = sin((float)time / 1e3);
+
         GLint locTorchPower = glGetUniformLocation(program, "torchPower");
         glUniform1f(locTorchPower, 20);
-        
+
         GLint locTorchPos = glGetUniformLocation(program, "torchPos");
         glUniform3fv(locTorchPos, 1, glm::value_ptr(pos + radius * glm::vec3(dx, 0, dz)));
     }
 };
+
+class Camera
+{
+    glm::vec3 eye;
+    glm::vec3 dir;
+    glm::mat4 P;
+    glm::mat4 camera;
+    float verticalAngle = 0;
+    float horizontalAngle = 0;
+
+  public:
+    Camera()
+    {
+        P = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+        eye = glm::vec3(0, 5, -5);
+        update();
+    }
+
+    void draw(GLuint program)
+    {
+        GLint locCamera = glGetUniformLocation(program, "Camera");
+        glUniformMatrix4fv(locCamera, 1, GL_FALSE, glm::value_ptr(camera));
+
+        GLint locEye = glGetUniformLocation(program, "eye");
+        glUniform3fv(locEye, 1, glm::value_ptr(eye));
+    }
+
+    static constexpr float dK = 0.1;
+
+    void dForward()
+    {
+        eye = eye + dK * dir;
+        update();
+    }
+
+    void dBack()
+    {
+        eye = eye - dK * dir;
+        update();
+    }
+
+    void dLeft()
+    {
+        glm::vec3 odir = glm::cross(dir, glm::vec3(0, 1, 0));
+        eye = eye - dK * odir;
+        update();
+    }
+
+    void dRight()
+    {
+        glm::vec3 odir = glm::cross(dir, glm::vec3(0, 1, 0));
+        eye = eye + dK * odir;
+        update();
+    }
+
+    void update()
+    {
+        dir = glm::vec3(cos(verticalAngle) * sin(horizontalAngle), sin(verticalAngle), cos(verticalAngle) * cos(horizontalAngle));
+        camera = P * glm::lookAt(eye, eye + dir, glm::vec3(0, 1, 0));
+    }
+
+    void rotate(float dx, float dy)
+    {
+        horizontalAngle += dx / 100.0;
+        verticalAngle += dy / 100.0;
+        update();
+    }
+};
+
+class UI
+{
+    bool pressed = false;
+    bool released = true;
+    float oldxpos;
+    float oldypos;
+
+  public:
+    Camera camera;
+
+    void onMouseButton(int button, int action)
+    {
+        if (button == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            pressed = action == GLFW_PRESS;
+            released = action != GLFW_PRESS;
+        }
+    }
+
+    void onCursorPos(float xpos, float ypos)
+    {
+        if (pressed)
+        {
+            pressed = false;
+            oldxpos = xpos;
+            oldypos = ypos;
+        }
+
+        if (!released)
+        {
+            rotate(xpos, ypos);
+        }
+    }
+
+    void rotate(float xpos, float ypos)
+    {
+        float dx = xpos - oldxpos;
+        float dy = ypos - oldypos;
+        oldxpos = xpos;
+        oldypos = ypos;
+
+        camera.rotate(dx, dy);
+    }
+
+    void onKey(int key)
+    {
+        if (key == GLFW_KEY_UP)
+        {
+            camera.dForward();
+        }
+        else if (key == GLFW_KEY_DOWN)
+        {
+            camera.dBack();
+        }
+        else if (key == GLFW_KEY_LEFT)
+        {
+            camera.dLeft();
+        }
+        else if (key == GLFW_KEY_RIGHT)
+        {
+            camera.dRight();
+        }
+    }
+} ui;
+
+void key_callback(GLFWwindow *, int key, int, int, int)
+{
+    ui.onKey(key);
+}
+
+void cursor_pos_callback(GLFWwindow *, double xpos, double ypos)
+{
+    ui.onCursorPos(xpos, ypos);
+}
+
+void mouse_button_callback(GLFWwindow *, int button, int action, int)
+{
+    ui.onMouseButton(button, action);
+}
 
 int main()
 {
@@ -263,7 +414,7 @@ int main()
     GLuint program = loadProgram("general/vertex.glsl", "general/fragment.glsl");
 
     // setup lamp's uniforms
-    ShadowLamp lamp(glm::vec3(-5, 5, 5), glm::vec3(5, -5, -5), 50, 0.8);    
+    ShadowLamp lamp(glm::vec3(-5, 5, 5), glm::vec3(5, -5, -5), 50, 0.8);
     lamp.setup(shadowProgram, program);
 
     // create a torch
@@ -271,17 +422,11 @@ int main()
 
     // configure camera
     glUseProgram(program);
-    glm::mat4 P = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-    glm::vec3 eye = glm::vec3(0, 5, -5);
-    glm::mat4 V = glm::lookAt(eye, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-    glm::mat4 camera = P * V;
 
-    GLint locCamera = glGetUniformLocation(program, "Camera");
-    glUniformMatrix4fv(locCamera, 1, GL_FALSE, glm::value_ptr(camera));
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, cursor_pos_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-    GLint locEye = glGetUniformLocation(program, "eye");
-    glUniform3fv(locEye, 1, glm::value_ptr(eye));
-    
     glEnable(GL_DEPTH_TEST);
 
     /* Loop until the user closes the window */
@@ -298,6 +443,8 @@ int main()
         glViewport(0, 0, 640, 480);
         glUseProgram(program);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        ui.camera.draw(program);
 
         plane.draw(program);
         bunny1.draw(program);
