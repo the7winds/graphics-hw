@@ -174,7 +174,7 @@ class ShadowLamp
         }
     }
 
-    void setup(GLint shadowProgram, GLint program)
+    void setup(GLint shadowProgram, GLint program, GLint debug)
     {
         glm::mat4 P = glm::ortho<float>(-10, 10, -10, 10, -10, 30);
         glm::mat4 V = glm::lookAt(pos, pos + dir, glm::vec3(0, 1, 0));
@@ -182,6 +182,11 @@ class ShadowLamp
 
         glUseProgram(shadowProgram);
         glUniformMatrix4fv(glGetUniformLocation(shadowProgram, "Camera"), 1, GL_FALSE, glm::value_ptr(shadowCamera));
+
+        glUseProgram(debug);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, shadowTex);
+        glUniform1i(glGetUniformLocation(program, "shadow"), 0);
 
         glUseProgram(program);
 
@@ -495,12 +500,16 @@ int main()
 
     Object plane(0, glm::vec4(0, 1, 0, 1), glm::vec4(0.1, 0.1, 0.1, 1), 1, "objects/plane.obj");
 
+    Object screen(0, glm::vec4(1), glm::vec4(1), 1, "objects/screen.obj");
+
     GLuint shadowProgram = loadProgram("shadow/vertex.glsl", "shadow/fragment.glsl");
     GLuint program = loadProgram("general/vertex.glsl", "general/fragment.glsl");
+    GLuint debug = loadProgram("debug/vertex.glsl", "debug/fragment.glsl");
+
 
     // setup lamp's uniforms
     ShadowLamp lamp(glm::vec3(-5, 5, 5), 50, 0.8);
-    lamp.setup(shadowProgram, program);
+    lamp.setup(shadowProgram, program, debug);
     ui.shadowLamp = &lamp;
 
     // create a torch
@@ -519,7 +528,7 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         // evaluate shadow map
-        lamp.setup(shadowProgram, program);
+        lamp.setup(shadowProgram, program, debug);
         lamp.shadow(shadowProgram);
         plane.draw(shadowProgram);
         bunny1.draw(shadowProgram);
@@ -541,6 +550,9 @@ int main()
         bunny1.draw(program);
         bunny2.draw(program);
         torch.draw(program);
+        
+        glUseProgram(debug);
+        screen.draw(debug);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
