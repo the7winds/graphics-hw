@@ -218,9 +218,10 @@ class ShadowLamp
         glUseProgram(shadowProgram);
 
     }
+
     void update()
     {
-        dir = glm::vec3(cos(verticalAngle) * sin(horizontalAngle), sin(verticalAngle), cos(verticalAngle) * cos(horizontalAngle));
+        dir = glm::vec3(sin(horizontalAngle) * cos(verticalAngle), sin(horizontalAngle) * sin(verticalAngle), cos(horizontalAngle));
     }
 
     void angleUp()
