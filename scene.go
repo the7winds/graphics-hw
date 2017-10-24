@@ -23,13 +23,20 @@ type Scene struct {
 func (scene *Scene) loadModel() {
 	scene.programID = newProgram("shaders/vertex.glsl", "shaders/fragment.glsl")
 
-	model := NewModel("objects/model.obj")
-	object := model.NewObject()
-	object.color = mgl32.Vec4{1, 1, 1, 1}
+	planeModel := NewModel("objects/plane.obj")
+	plane := planeModel.NewObject()
+	plane.color = mgl32.Vec4{1, 1, 1, 1}
+
+	sphereModel := NewModel("objects/icosphere.obj")
+	sphere := sphereModel.NewObject()
+	sphere.color = mgl32.Vec4{1, 1, 1, 1}
+	sphere.M = sphere.M.Mul4(mgl32.Translate3D(5, 0, 0))
 
 	scene.camera.init(mgl32.Vec3{5, 5, 5})
 
-	scene.objects = append(scene.objects, object)
+	scene.objects = append(scene.objects, plane, sphere)
+
+	gl.Enable(gl.DEPTH_TEST)
 }
 
 func (scene *Scene) keyCallback(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -48,7 +55,7 @@ func (scene *Scene) mouseButtonCallback(w *glfw.Window, button glfw.MouseButton,
 	if button == glfw.MouseButtonLeft {
 		if action == glfw.Press {
 			scene.isRotatingNow = true
-			xpos, ypos := w.GetPos()
+			xpos, ypos := w.GetCursorPos()
 			scene.xpos, scene.ypos = float32(xpos), float32(ypos)
 		} else {
 			scene.isRotatingNow = false
@@ -61,13 +68,14 @@ func (scene *Scene) cursorPosCallback(w *glfw.Window, xpos float64, ypos float64
 		xpos := float32(xpos)
 		ypos := float32(ypos)
 
-		dX := scene.xpos - xpos
-		dY := scene.ypos - ypos
+		dX := xpos - scene.xpos
+		dY := ypos - scene.ypos
+
+		fmt.Println(dX, dY)
 
 		scene.xpos, scene.ypos = xpos, ypos
 
-		scene.camera.horizontalAngle += dX * .1
-		scene.camera.verticalAngle += dY * .1
+		scene.camera.rotate(dX, dY)
 		scene.camera.update()
 	}
 }

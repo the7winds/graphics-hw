@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -14,6 +15,7 @@ type Camera struct {
 	horizontalAngle float32
 	dVertical       float32
 	dHorizontal     float32
+	dForward        float32
 
 	P mgl32.Mat4
 
@@ -26,6 +28,7 @@ func (camera *Camera) init(eye mgl32.Vec3) {
 	camera.horizontalAngle = 1
 	camera.dHorizontal = 0.01
 	camera.dVertical = 0.01
+	camera.dForward = 0.1
 
 	camera.P = mgl32.Perspective(1.4/2, 4.0/3.0, 0.1, 100)
 
@@ -36,9 +39,9 @@ func (camera *Camera) update() {
 	ha := float64(camera.horizontalAngle)
 	va := float64(camera.verticalAngle)
 
-	x := float32(math.Sin(ha) * math.Cos(va))
-	y := float32(math.Sin(ha) * math.Sin(va))
-	z := float32(math.Cos(ha))
+	x := float32(math.Cos(va) * math.Sin(ha))
+	y := float32(math.Sin(va))
+	z := float32(math.Cos(va) * math.Cos(ha))
 
 	camera.dir = mgl32.Vec3{x, y, z}.Normalize()
 	camera.ortho = mgl32.Vec3.Cross(camera.dir, mgl32.Vec3{0, 1, 0}).Normalize()
@@ -54,27 +57,29 @@ func (camera *Camera) configure(eye, dir mgl32.Vec3) {
 	camera.update()
 }
 
-func (camera *Camera) rotateDeltaUpVertical() {
-	camera.verticalAngle += camera.dVertical
+func (camera *Camera) rotate(dH, dV float32) {
+	camera.verticalAngle += dV * camera.dVertical
+	camera.horizontalAngle += dH * camera.dHorizontal
+	fmt.Println(camera.verticalAngle, camera.horizontalAngle)
 	camera.update()
 }
 
 func (camera *Camera) moveEyeForward() {
-	camera.eye = mgl32.Vec3.Add(camera.eye, camera.dir.Mul(0.01))
+	camera.eye = mgl32.Vec3.Add(camera.eye, camera.dir.Mul(camera.dForward))
 	camera.update()
 }
 
 func (camera *Camera) moveEyeBackward() {
-	camera.eye = mgl32.Vec3.Add(camera.eye, camera.dir.Mul(-0.01))
+	camera.eye = mgl32.Vec3.Add(camera.eye, camera.dir.Mul(-camera.dForward))
 	camera.update()
 }
 
 func (camera *Camera) moveEyeRight() {
-	camera.eye = mgl32.Vec3.Add(camera.eye, camera.ortho.Mul(0.01))
+	camera.eye = mgl32.Vec3.Add(camera.eye, camera.ortho.Mul(camera.dForward))
 	camera.update()
 }
 
 func (camera *Camera) moveEyeLeft() {
-	camera.eye = mgl32.Vec3.Add(camera.eye, camera.ortho.Mul(-0.01))
+	camera.eye = mgl32.Vec3.Add(camera.eye, camera.ortho.Mul(-camera.dForward))
 	camera.update()
 }
