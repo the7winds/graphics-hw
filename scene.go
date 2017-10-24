@@ -23,18 +23,18 @@ type Scene struct {
 func (scene *Scene) loadModel() {
 	scene.programID = newProgram("shaders/vertex.glsl", "shaders/fragment.glsl")
 
-	planeModel := NewModel("objects/plane.obj")
-	plane := planeModel.NewObject()
-	plane.color = mgl32.Vec4{1, 1, 1, 1}
-
 	sphereModel := NewModel("objects/icosphere.obj")
 	sphere := sphereModel.NewObject()
 	sphere.color = mgl32.Vec4{1, 1, 1, 1}
 	sphere.M = sphere.M.Mul4(mgl32.Translate3D(5, 0, 0))
 
+	sponzaModel := NewModel("objects/sponza.obj")
+	sponza := sponzaModel.NewObject()
+	sponza.color = mgl32.Vec4{1, 1, 1, 1}
+
 	scene.camera.init(mgl32.Vec3{5, 5, 5})
 
-	scene.objects = append(scene.objects, plane, sphere)
+	scene.objects = append(scene.objects, sponza)
 
 	gl.Enable(gl.DEPTH_TEST)
 }
@@ -70,8 +70,6 @@ func (scene *Scene) cursorPosCallback(w *glfw.Window, xpos float64, ypos float64
 
 		dX := xpos - scene.xpos
 		dY := ypos - scene.ypos
-
-		fmt.Println(dX, dY)
 
 		scene.xpos, scene.ypos = xpos, ypos
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -60,7 +59,6 @@ func (camera *Camera) configure(eye, dir mgl32.Vec3) {
 func (camera *Camera) rotate(dH, dV float32) {
 	camera.verticalAngle += dV * camera.dVertical
 	camera.horizontalAngle += dH * camera.dHorizontal
-	fmt.Println(camera.verticalAngle, camera.horizontalAngle)
 	camera.update()
 }
 
