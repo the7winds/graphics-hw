@@ -48,7 +48,7 @@ func (app *Application) glInit() error {
 	return nil
 }
 
-func (app *Application) scenePrepare() {
+func (app *Application) scenePrepare() error {
 	app.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		app.scene.keyCallback(w, key, scancode, action, mods)
 	})
@@ -61,7 +61,7 @@ func (app *Application) scenePrepare() {
 		app.scene.cursorPosCallback(w, xpos, ypos)
 	})
 
-	app.scene.loadModel()
+	return app.scene.loadModel()
 }
 
 func (app *Application) run() {
@@ -85,6 +85,10 @@ func main() {
 		return
 	}
 
-	app.scenePrepare()
+	if err := app.scenePrepare(); err != nil {
+		log.Fatalln(err)
+		return
+	}
+
 	app.run()
 }

@@ -21,10 +21,10 @@ type Camera struct {
 	PV mgl32.Mat4
 }
 
-func (camera *Camera) init(eye mgl32.Vec3) {
+func (camera *Camera) init(eye mgl32.Vec3, horizontalAngle, verticalAngle float32) {
 	camera.eye = eye
-	camera.verticalAngle = 0
-	camera.horizontalAngle = 1
+	camera.verticalAngle = horizontalAngle
+	camera.horizontalAngle = verticalAngle
 	camera.dHorizontal = 0.01
 	camera.dVertical = 0.01
 	camera.dForward = 0.1

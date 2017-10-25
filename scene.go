@@ -9,34 +9,31 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-type Scene struct {
-	camera  Camera
-	objects []*Object
+type ScreenMode int
 
+const (
+	SCENE ScreenMode = iota
+	COLOR
+	NORMA
+	DEPTH
+)
+
+type Scene struct {
+	camera        Camera
 	isRotatingNow bool
 	xpos          float32
 	ypos          float32
 
-	programID uint32
-}
+	// screen
+	screen    *Object
+	mode      ScreenMode
+	displayID uint32
 
-func (scene *Scene) loadModel() {
-	scene.programID = newProgram("shaders/vertex.glsl", "shaders/fragment.glsl")
+	// l-buffer
+	lbuffer LBuffer
 
-	sphereModel := NewModel("objects/icosphere.obj")
-	sphere := sphereModel.NewObject()
-	sphere.color = mgl32.Vec4{1, 1, 1, 1}
-	sphere.M = sphere.M.Mul4(mgl32.Translate3D(5, 0, 0))
-
-	sponzaModel := NewModel("objects/sponza.obj")
-	sponza := sponzaModel.NewObject()
-	sponza.color = mgl32.Vec4{1, 1, 1, 1}
-
-	scene.camera.init(mgl32.Vec3{5, 5, 5})
-
-	scene.objects = append(scene.objects, sponza)
-
-	gl.Enable(gl.DEPTH_TEST)
+	// g-buffer
+	gbuffer GBuffer
 }
 
 func (scene *Scene) keyCallback(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -48,6 +45,18 @@ func (scene *Scene) keyCallback(w *glfw.Window, key glfw.Key, scancode int, acti
 		scene.camera.moveEyeLeft()
 	} else if key == glfw.KeyRight {
 		scene.camera.moveEyeRight()
+	} else if key == glfw.Key0 {
+		scene.mode = SCENE
+		fmt.Println("set SCENE mode", scene.mode)
+	} else if key == glfw.Key1 {
+		scene.mode = COLOR
+		fmt.Println("set COLOR mode", scene.mode)
+	} else if key == glfw.Key2 {
+		scene.mode = NORMA
+		fmt.Println("set NORMA mode", scene.mode)
+	} else if key == glfw.Key3 {
+		scene.mode = DEPTH
+		fmt.Println("set DEPTH mode", scene.mode)
 	}
 }
 
@@ -74,24 +83,75 @@ func (scene *Scene) cursorPosCallback(w *glfw.Window, xpos float64, ypos float64
 		scene.xpos, scene.ypos = xpos, ypos
 
 		scene.camera.rotate(dX, dY)
-		scene.camera.update()
 	}
 }
 
-func (scene *Scene) render() error {
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-	gl.UseProgram(scene.programID)
-	gl.UniformMatrix4fv(gl.GetUniformLocation(scene.programID, gl.Str("PV\x00")), 1, false, &scene.camera.PV[0])
-
-	for _, object := range scene.objects {
-		object.draw(scene.programID)
+func (scene *Scene) loadModel() error {
+	if err := scene.gbuffer.init(); err != nil {
+		return err
 	}
 
-	if gl.GetError() != 0 {
-		errString := fmt.Sprintln(gl.GetError())
-		return errors.New(errString)
+	if err := scene.lbuffer.init(); err != nil {
+		return err
+	}
+
+	scene.displayID = newProgram("shaders/screen/vertex.glsl", "shaders/screen/fragment.glsl")
+	scene.screen = NewModel("objects/screen.obj").NewObject()
+
+	scene.camera.init(mgl32.Vec3{5, 5, 5}, mgl32.DegToRad(0), mgl32.DegToRad(0))
+
+	return checkGlError("can't load screen")
+}
+
+func checkGlError(prefix string) error {
+	if errCode := gl.GetError(); errCode != 0 {
+		errMessage := fmt.Sprintln(prefix, ":", errCode)
+		return errors.New(errMessage)
 	}
 
 	return nil
+}
+
+func (scene *Scene) render() error {
+	if err := scene.gbuffer.render(&scene.camera.PV); err != nil {
+		return err
+	}
+
+	if err := scene.lbuffer.render(&scene.gbuffer, &scene.camera.PV); err != nil {
+		return err
+	}
+
+	return scene.display()
+}
+
+func (scene *Scene) display() error {
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+	gl.Viewport(0, 0, 800, 800)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	gl.Enable(gl.DEPTH_TEST)
+
+	gl.UseProgram(scene.displayID)
+
+	gl.UniformMatrix4fv(gl.GetUniformLocation(scene.displayID, gl.Str("PV\x00")), 1, false, &scene.camera.PV[0])
+	gl.Uniform1i(gl.GetUniformLocation(scene.displayID, gl.Str("Mode\x00")), int32(scene.mode))
+
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, scene.gbuffer.colorTexture)
+	gl.Uniform1i(gl.GetUniformLocation(scene.displayID, gl.Str("TexColor\x00")), 0)
+
+	gl.ActiveTexture(gl.TEXTURE1)
+	gl.BindTexture(gl.TEXTURE_2D, scene.gbuffer.normaTexture)
+	gl.Uniform1i(gl.GetUniformLocation(scene.displayID, gl.Str("TexNorma\x00")), 1)
+
+	gl.ActiveTexture(gl.TEXTURE2)
+	gl.BindTexture(gl.TEXTURE_2D, scene.gbuffer.depthTexture)
+	gl.Uniform1i(gl.GetUniformLocation(scene.displayID, gl.Str("TexDepth\x00")), 2)
+
+	gl.ActiveTexture(gl.TEXTURE3)
+	gl.BindTexture(gl.TEXTURE_2D, scene.lbuffer.lightTexture)
+	gl.Uniform1i(gl.GetUniformLocation(scene.displayID, gl.Str("TexLight\x00")), 3)
+
+	scene.screen.draw(scene.displayID)
+
+	return checkGlError("can't display")
 }
