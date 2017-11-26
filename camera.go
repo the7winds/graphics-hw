@@ -18,8 +18,7 @@ type Camera struct {
 
 	P mgl32.Mat4
 
-	PV    mgl32.Mat4
-	InvPV mgl32.Mat4
+	PV mgl32.Mat4
 }
 
 func (camera *Camera) init(eye mgl32.Vec3, horizontalAngle, verticalAngle float32) {
@@ -49,7 +48,6 @@ func (camera *Camera) update() {
 	V := mgl32.LookAtV(camera.eye, mgl32.Vec3.Add(camera.eye, camera.dir), mgl32.Vec3{0, 1, 0})
 
 	camera.PV = mgl32.Mat4.Mul4(camera.P, V)
-	camera.InvPV = camera.PV.Inv()
 }
 
 func (camera *Camera) configure(eye, dir mgl32.Vec3) {

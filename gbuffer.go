@@ -66,11 +66,12 @@ func (gbuffer *GBuffer) init() error {
 }
 
 func (gbuffer *GBuffer) loadScene() {
-	plane := NewModel("objects/plane.obj").NewObject()
+	plane := NewModel("objects/sponza.obj").NewObject()
 	plane.color = mgl32.Vec4{1, 1, 1, 1}
 
-	sphere := NewModel("objects/icosphere.obj").NewObject()
+	sphere := NewModel("objects/stanford_bunny.obj").NewObject()
 	sphere.color = mgl32.Vec4{1, 0, 1, 1}
+	sphere.M = sphere.M.Mul4(mgl32.Scale3D(3, 3, 3))
 
 	gbuffer.objects = append(gbuffer.objects, plane, sphere)
 }

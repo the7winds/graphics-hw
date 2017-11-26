@@ -8,6 +8,7 @@ uniform sampler2D TexColor;
 uniform sampler2D TexNorma;
 uniform sampler2D TexDepth;
 uniform sampler2D TexLight;
+uniform sampler2D TexPos;
 
 out vec4 fragColor;
 

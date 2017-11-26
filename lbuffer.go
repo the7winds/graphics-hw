@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
@@ -54,25 +55,48 @@ func (lbuffer *LBuffer) init() error {
 
 func (lbuffer *LBuffer) loadLight() {
 	sphereModel := NewModel("objects/icosphere.obj")
-	torch := sphereModel.NewTorch()
-	torch.color = mgl32.Vec4{1, 1, 1, 1}
-	torch.M = mgl32.Mat4.Mul4(torch.M, mgl32.Translate3D(3, -1, 0))
 
+	torch := NewTorch(sphereModel)
+	torch.color = mgl32.Vec4{1, 0, 0, 0}
+	torch.Scale(6)
+	torch.Move(0, 1, 0)
 	lbuffer.torches = append(lbuffer.torches, torch)
+
+	torch = NewTorch(sphereModel)
+	torch.color = mgl32.Vec4{0, 1, 0, 0}
+	torch.Scale(6)
+	torch.Move(0, 1, 1)
+	lbuffer.torches = append(lbuffer.torches, torch)
+
+	torch = NewTorch(sphereModel)
+	torch.color = mgl32.Vec4{0, 0, 1, 0}
+	torch.Scale(6)
+	torch.Move(0, 1, -1)
+	lbuffer.torches = append(lbuffer.torches, torch)
+
+	n := 100
+	for i := 0; i < n; i++ {
+		torch = NewTorch(sphereModel)
+		torch.color = mgl32.Vec4{rand.Float32(), rand.Float32(), rand.Float32(), 0}
+		torch.Scale(6)
+		torch.Move(0, 1, 0)
+		lbuffer.torches = append(lbuffer.torches, torch)
+	}
 }
 
 func (lbuffer *LBuffer) render(gbuffer *GBuffer, camera *Camera) error {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, lbuffer.fbo)
 	gl.Viewport(0, 0, 800, 800)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	gl.Enable(gl.DEPTH_TEST)
+
+	gl.Disable(gl.DEPTH_TEST)
+	defer gl.Enable(gl.DEPTH_TEST)
 
 	gl.ClearColor(0, 0, 0, 0)
 
 	gl.UseProgram(lbuffer.programID)
 
 	gl.UniformMatrix4fv(gl.GetUniformLocation(lbuffer.programID, gl.Str("PV\x00")), 1, false, &camera.PV[0])
-	gl.UniformMatrix4fv(gl.GetUniformLocation(lbuffer.programID, gl.Str("InvPV\x00")), 1, false, &camera.InvPV[0])
 
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, gbuffer.colorTexture)
@@ -86,7 +110,18 @@ func (lbuffer *LBuffer) render(gbuffer *GBuffer, camera *Camera) error {
 	gl.BindTexture(gl.TEXTURE_2D, gbuffer.depthTexture)
 	gl.Uniform1i(gl.GetUniformLocation(lbuffer.programID, gl.Str("TexDepth\x00")), 2)
 
+	gl.Enable(gl.BLEND)
+	gl.BlendEquation(gl.FUNC_ADD)
+	gl.BlendFunc(gl.ONE, gl.ONE)
+	defer gl.Disable(gl.BLEND)
+
+	gl.Enable(gl.CULL_FACE)
+	defer gl.Disable(gl.CULL_FACE)
+	gl.CullFace(gl.FRONT)
+	defer gl.CullFace(gl.BACK)
+
 	for _, torch := range lbuffer.torches {
+		torch.Animate()
 		torch.draw(lbuffer.programID)
 	}
 

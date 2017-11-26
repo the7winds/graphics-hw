@@ -10,5 +10,5 @@ out vec3 texNorma;
 
 void main() {
     texColor = Color.rgb;
-    texNorma = 0.5 * (normalize(cross(dFdx(pos), dFdy(pos))) + vec3(1));
+    texNorma = (normalize(cross(dFdx(pos), dFdy(pos))) + 1) / 2;
 }
