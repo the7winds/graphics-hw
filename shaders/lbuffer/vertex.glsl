@@ -5,11 +5,14 @@ uniform mat4 M;
 
 in vec3 Vertex;
 
-out vec3 gpos;
-out vec2 tpos;
+out vec3 npos;
+out vec3 mpos;
 
 void main() {
-    gl_Position = PV * M * vec4(Vertex, 1);
-    gpos = gl_Position.xyz;
-    tpos = 0.5 * (gl_Position.xy + vec2(1));
+    vec4 mp = M * vec4(Vertex, 1);
+    vec4 pp = PV * mp;
+    gl_Position = pp;
+    
+    npos = pp.xyz / pp.w;
+    mpos = mp.xyz;
 }

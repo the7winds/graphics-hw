@@ -117,7 +117,7 @@ func (scene *Scene) render() error {
 		return err
 	}
 
-	if err := scene.lbuffer.render(&scene.gbuffer, &scene.camera.PV); err != nil {
+	if err := scene.lbuffer.render(&scene.gbuffer, &scene.camera); err != nil {
 		return err
 	}
 

@@ -3,26 +3,28 @@
 uniform vec4 Color;
 uniform vec3 Center;
 uniform mat4 InvPV;
+uniform mat4 PV;
 
 uniform sampler2D TexColor;
 uniform sampler2D TexNorma;
 uniform sampler2D TexDepth;
 
-in vec3 gpos;
-in vec2 tpos;
+in vec3 mpos;
+in vec3 npos;
 
 out vec4 fragColor;
 
 vec3 getRealPos() {
-    float depth = texture(TexDepth, tpos).x;
-    float z = 2 * depth - 1;
-    vec3 pos = vec3(gpos.xy, z);
-    return (InvPV * vec4(pos, 1)).xyz;
+    vec2 tpos = (npos.xy + 1) / 2;
+    float z = texture(TexDepth, tpos).x;
+    vec4 pos = vec4(tpos.xy, z, 1);
+    return (InvPV * pos).xyz;
 }
 
 vec3 getRealNormal() {
-    vec3 n = texture(TexNorma, tpos).xyz;
-    return 2 * n - vec3(1);
+    vec2 tpos = (npos.xy + 1) / 2;
+    vec3 n = texture(TexNorma,  tpos).xyz;
+    return 2 * n - 1;
 }
 
 void main() {
@@ -33,11 +35,11 @@ void main() {
     vec3 l = normalize(Center - rpos);
     float c = clamp(dot(n, l), 0, 1);
 
-    float d = 2 * texture(TexDepth, tpos).x - 1;
-    float vis = 0;
-    if (d - gpos.z < 0) {
-        vis = 1;
-    }
+    float lr = length(rpos - Center);
+    float ra = length(mpos - Center);
 
-    fragColor = vis * c * texture(TexColor, tpos);
+    float vis = float(lr < ra) * c / pow(lr, 2);
+
+    fragColor = vis * texture(TexColor, (npos.xy + 1) / 2);
+    fragColor = float(lr < ra) * texture(TexColor, (npos.xy + 1) / 2);
 }

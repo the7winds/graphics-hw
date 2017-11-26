@@ -56,23 +56,23 @@ func (lbuffer *LBuffer) loadLight() {
 	sphereModel := NewModel("objects/icosphere.obj")
 	torch := sphereModel.NewTorch()
 	torch.color = mgl32.Vec4{1, 1, 1, 1}
-	torch.M = mgl32.Mat4.Mul4(torch.M, mgl32.Translate3D(0.5, 0, 0))
+	torch.M = mgl32.Mat4.Mul4(torch.M, mgl32.Translate3D(3, -1, 0))
 
 	lbuffer.torches = append(lbuffer.torches, torch)
 }
 
-func (lbuffer *LBuffer) render(gbuffer *GBuffer, PV *mgl32.Mat4) error {
+func (lbuffer *LBuffer) render(gbuffer *GBuffer, camera *Camera) error {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, lbuffer.fbo)
 	gl.Viewport(0, 0, 800, 800)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.Enable(gl.DEPTH_TEST)
 
+	gl.ClearColor(0, 0, 0, 0)
+
 	gl.UseProgram(lbuffer.programID)
 
-	gl.UniformMatrix4fv(gl.GetUniformLocation(lbuffer.programID, gl.Str("PV\x00")), 1, false, &PV[0])
-
-	m := PV.Inv()
-	gl.UniformMatrix4fv(gl.GetUniformLocation(lbuffer.programID, gl.Str("InvPV\x00")), 1, false, &m[0])
+	gl.UniformMatrix4fv(gl.GetUniformLocation(lbuffer.programID, gl.Str("PV\x00")), 1, false, &camera.PV[0])
+	gl.UniformMatrix4fv(gl.GetUniformLocation(lbuffer.programID, gl.Str("InvPV\x00")), 1, false, &camera.InvPV[0])
 
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, gbuffer.colorTexture)
