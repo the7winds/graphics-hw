@@ -78,17 +78,17 @@ func (gbuffer *GBuffer) free() {
 }
 
 func (gbuffer *GBuffer) loadScene() {
-	planeModel := NewModel("objects/sponza.obj")
-	plane := planeModel.NewObject()
-	plane.color = mgl32.Vec4{1, 1, 1, 1}
+	environmentModel := NewModel("objects/sponza.obj")
+	environment := environmentModel.NewObject()
+	environment.color = mgl32.Vec4{1, 1, 1, 1}
 
-	sphereModel := NewModel("objects/stanford_bunny.obj")
-	sphere := sphereModel.NewObject()
-	sphere.color = mgl32.Vec4{1, 0, 1, 1}
-	sphere.M = sphere.M.Mul4(mgl32.Scale3D(3, 3, 3))
+	bunnyModel := NewModel("objects/stanford_bunny.obj")
+	bunny := bunnyModel.NewObject()
+	bunny.color = mgl32.Vec4{1, 0, 1, 1}
+	bunny.M = bunny.M.Mul4(mgl32.Scale3D(3, 3, 3))
 
-	gbuffer.objects = append(gbuffer.objects, plane, sphere)
-	gbuffer.models = append(gbuffer.models, planeModel, sphereModel)
+	gbuffer.objects = append(gbuffer.objects, environment, bunny)
+	gbuffer.models = append(gbuffer.models, environmentModel, bunnyModel)
 }
 
 func (gbuffer GBuffer) render(PV *mgl32.Mat4) error {
