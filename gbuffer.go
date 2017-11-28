@@ -12,6 +12,7 @@ type GBuffer struct {
 	programID    uint32
 	fbo          uint32
 	objects      []*Object
+	models       []*Model
 	colorTexture uint32
 	depthTexture uint32
 	normaTexture uint32
@@ -65,15 +66,29 @@ func (gbuffer *GBuffer) init() error {
 	return nil
 }
 
+func (gbuffer *GBuffer) free() {
+	gl.DeleteFramebuffers(1, &gbuffer.fbo)
+	gl.DeleteTextures(1, &gbuffer.colorTexture)
+	gl.DeleteTextures(1, &gbuffer.depthTexture)
+	gl.DeleteTextures(1, &gbuffer.normaTexture)
+
+	for _, model := range gbuffer.models {
+		model.free()
+	}
+}
+
 func (gbuffer *GBuffer) loadScene() {
-	plane := NewModel("objects/sponza.obj").NewObject()
+	planeModel := NewModel("objects/sponza.obj")
+	plane := planeModel.NewObject()
 	plane.color = mgl32.Vec4{1, 1, 1, 1}
 
-	sphere := NewModel("objects/stanford_bunny.obj").NewObject()
+	sphereModel := NewModel("objects/stanford_bunny.obj")
+	sphere := sphereModel.NewObject()
 	sphere.color = mgl32.Vec4{1, 0, 1, 1}
 	sphere.M = sphere.M.Mul4(mgl32.Scale3D(3, 3, 3))
 
 	gbuffer.objects = append(gbuffer.objects, plane, sphere)
+	gbuffer.models = append(gbuffer.models, planeModel, sphereModel)
 }
 
 func (gbuffer GBuffer) render(PV *mgl32.Mat4) error {

@@ -83,3 +83,9 @@ func NewModel(filename string) *Model {
 
 	return model
 }
+
+func (model *Model) free() {
+	gl.DeleteBuffers(1, &model.vertexBuffer)
+	gl.DeleteBuffers(1, &model.indexBuffer)
+	gl.DeleteVertexArrays(1, &model.vao)
+}

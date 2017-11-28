@@ -103,6 +103,11 @@ func (scene *Scene) loadModel() error {
 	return checkGlError("can't load screen")
 }
 
+func (scene *Scene) free() {
+	scene.gbuffer.free()
+	scene.lbuffer.free()
+}
+
 func checkGlError(prefix string) error {
 	if errCode := gl.GetError(); errCode != 0 {
 		errMessage := fmt.Sprintln(prefix, ":", errCode)

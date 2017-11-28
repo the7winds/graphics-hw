@@ -53,6 +53,10 @@ func (lbuffer *LBuffer) init() error {
 	return nil
 }
 
+func (lbuffer *LBuffer) free() {
+	gl.DeleteFramebuffers(1, &lbuffer.fbo)
+}
+
 func (lbuffer *LBuffer) loadLight() {
 	sphereModel := NewModel("objects/icosphere.obj")
 

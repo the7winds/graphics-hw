@@ -21,6 +21,10 @@ func (model *Model) NewObject() *Object {
 	return object
 }
 
+func (object *Object) free() {
+
+}
+
 func (object *Object) draw(programID uint32) {
 	gl.UseProgram(programID)
 

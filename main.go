@@ -22,7 +22,7 @@ func (app *Application) glfwInit() error {
 
 	glfw.WindowHint(glfw.Resizable, glfw.False)
 	glfw.WindowHint(glfw.ContextVersionMajor, 4)
-	glfw.WindowHint(glfw.ContextVersionMinor, 1)
+	glfw.WindowHint(glfw.ContextVersionMinor, 5)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
@@ -64,6 +64,10 @@ func (app *Application) scenePrepare() error {
 	return app.scene.loadModel()
 }
 
+func (app *Application) free() {
+	app.scene.free()
+}
+
 func (app *Application) run() {
 	for !app.window.ShouldClose() {
 		app.scene.render()
@@ -74,6 +78,7 @@ func (app *Application) run() {
 
 func main() {
 	var app Application
+	defer app.free()
 
 	if err := app.glfwInit(); err != nil {
 		log.Fatalln(err)
