@@ -17,7 +17,7 @@ void main() {
     vec2 tpos = gl_FragCoord.xy / 800;
     float z = ppos.w * (2 * texture(TexDepth, tpos).x - 1);
     vec3 rpos = (inverse(PV) * vec4(ppos.xy, z, ppos.w)).xyz;
-    vec3 n = texture(TexNorma, tpos).xyz;
+    vec3 n = 2 * texture(TexNorma, tpos).xyz - 1;
     
     vec3 l = normalize(Center - rpos);
     float c = clamp(dot(n, l), 0, 1);
