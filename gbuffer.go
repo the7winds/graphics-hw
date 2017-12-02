@@ -78,7 +78,7 @@ func (gbuffer *GBuffer) free() {
 }
 
 func (gbuffer *GBuffer) loadScene() {
-	environmentModel := NewModel("objects/sponza.obj")
+	environmentModel := NewModel("objects/plane.obj")
 	environment := environmentModel.NewObject()
 	environment.color = mgl32.Vec4{1, 1, 1, 1}
 

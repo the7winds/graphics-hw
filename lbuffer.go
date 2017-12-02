@@ -78,7 +78,7 @@ func (lbuffer *LBuffer) loadLight() {
 	torch.Move(0, 1, -1)
 	lbuffer.torches = append(lbuffer.torches, torch)
 
-	n := 100
+	n := 20
 	for i := 0; i < n; i++ {
 		torch = NewTorch(sphereModel)
 		torch.color = mgl32.Vec4{rand.Float32(), rand.Float32(), rand.Float32(), 0}

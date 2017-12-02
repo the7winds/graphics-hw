@@ -98,7 +98,7 @@ func (scene *Scene) loadModel() error {
 	scene.displayID = newProgram("shaders/screen/vertex.glsl", "shaders/screen/fragment.glsl")
 	scene.screen = NewModel("objects/screen.obj").NewObject()
 
-	scene.camera.init(mgl32.Vec3{5, 5, 5}, mgl32.DegToRad(0), mgl32.DegToRad(0))
+	scene.camera.init(mgl32.Vec3{5, 5, 5}, -2.2, -0.05)
 
 	return checkGlError("can't load screen")
 }
