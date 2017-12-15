@@ -35,6 +35,14 @@ func (object *Object) draw(programID uint32) {
 	gl.EnableVertexAttribArray(Vertex)
 	gl.VertexAttribPointer(Vertex, 3, gl.FLOAT, false, 0, gl.PtrOffset(0))
 
+	normaPassed := int32(len(object.model.norms))
+	gl.Uniform1i(gl.GetUniformLocation(programID, gl.Str("NormaPassed\x00")), normaPassed)
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, object.model.normaBuffer)
+	Norma := uint32(gl.GetAttribLocation(programID, gl.Str("Norm\x00")))
+	gl.EnableVertexAttribArray(Norma)
+	gl.VertexAttribPointer(Norma, 3, gl.FLOAT, false, 0, gl.PtrOffset(0))
+
 	// set color
 	gl.Uniform4fv(gl.GetUniformLocation(programID, gl.Str("Color\x00")), 1, &object.color[0])
 	// set matrix
