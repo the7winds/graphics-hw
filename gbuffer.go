@@ -87,7 +87,15 @@ func (gbuffer *GBuffer) loadScene() {
 	bunny.color = mgl32.Vec4{1, 0, 1, 1}
 	bunny.M = bunny.M.Mul4(mgl32.Scale3D(3, 3, 3))
 
-	gbuffer.objects = append(gbuffer.objects, environment, bunny)
+	bunny2 := bunnyModel.NewObject()
+	bunny2.color = mgl32.Vec4{1, 1, 1, 1}
+	bunny2.M = mgl32.Translate3D(2, 0, -1).Mul4(mgl32.Scale3D(10, 10, 10))
+
+	bunny3 := bunnyModel.NewObject()
+	bunny3.color = mgl32.Vec4{1, 1, 1, 1}
+	bunny3.M = mgl32.Translate3D(-1, 0, -1).Mul4(mgl32.Scale3D(15, 15, 15))
+
+	gbuffer.objects = append(gbuffer.objects, environment, bunny, bunny2, bunny3)
 	gbuffer.models = append(gbuffer.models, environmentModel, bunnyModel)
 }
 

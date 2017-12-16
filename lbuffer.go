@@ -10,11 +10,12 @@ import (
 )
 
 type LBuffer struct {
-	programID    uint32
-	fbo          uint32
-	torches      []*Torch
-	lightTexture uint32
-	depthBuffer  uint32
+	programID      uint32
+	fbo            uint32
+	torches        []*Torch
+	lightTexture   uint32
+	volumesTexture uint32
+	depthBuffer    uint32
 }
 
 func (lbuffer *LBuffer) init() error {
@@ -34,12 +35,21 @@ func (lbuffer *LBuffer) init() error {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 	gl.FramebufferTexture(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, lbuffer.lightTexture, 0)
 
+	gl.GenTextures(1, &lbuffer.volumesTexture)
+	gl.BindTexture(gl.TEXTURE_2D, lbuffer.volumesTexture)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, 800, 800, 0, gl.RGB, gl.FLOAT, nil)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	gl.FramebufferTexture(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT1, lbuffer.volumesTexture, 0)
+
 	gl.GenRenderbuffers(1, &lbuffer.depthBuffer)
 	gl.BindRenderbuffer(gl.RENDERBUFFER, lbuffer.depthBuffer)
 	gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT, 800, 800)
 	gl.FramebufferRenderbuffer(gl.DRAW_FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, lbuffer.depthBuffer)
 
-	gl.DrawBuffers(2, &([]uint32{gl.COLOR_ATTACHMENT0, gl.NONE})[0])
+	gl.DrawBuffers(3, &([]uint32{gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1, gl.NONE})[0])
 
 	if err := checkGlError("can't init L-Buffer"); err != nil {
 		return err
@@ -62,33 +72,33 @@ func (lbuffer *LBuffer) loadLight() {
 
 	torch := NewTorch(sphereModel)
 	torch.color = mgl32.Vec4{1, 0, 0, 0}
-	torch.Scale(6)
+	torch.Scale(2)
 	torch.Move(0, 1, 0)
 	lbuffer.torches = append(lbuffer.torches, torch)
 
 	torch = NewTorch(sphereModel)
 	torch.color = mgl32.Vec4{0, 1, 0, 0}
-	torch.Scale(6)
+	torch.Scale(2)
 	torch.Move(0, 1, 1)
 	lbuffer.torches = append(lbuffer.torches, torch)
 
 	torch = NewTorch(sphereModel)
 	torch.color = mgl32.Vec4{0, 0, 1, 0}
-	torch.Scale(6)
+	torch.Scale(2)
 	torch.Move(0, 1, -1)
 	lbuffer.torches = append(lbuffer.torches, torch)
 
-	n := 20
+	n := 100
 	for i := 0; i < n; i++ {
 		torch = NewTorch(sphereModel)
 		torch.color = mgl32.Vec4{rand.Float32(), rand.Float32(), rand.Float32(), 0}
-		torch.Scale(6)
+		torch.Scale(2)
 		torch.Move(0, 1, 0)
 		lbuffer.torches = append(lbuffer.torches, torch)
 	}
 }
 
-func (lbuffer *LBuffer) render(gbuffer *GBuffer, camera *Camera) error {
+func (lbuffer *LBuffer) render(gbuffer *GBuffer, PV *mgl32.Mat4) error {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, lbuffer.fbo)
 	gl.Viewport(0, 0, 800, 800)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -100,7 +110,7 @@ func (lbuffer *LBuffer) render(gbuffer *GBuffer, camera *Camera) error {
 
 	gl.UseProgram(lbuffer.programID)
 
-	gl.UniformMatrix4fv(gl.GetUniformLocation(lbuffer.programID, gl.Str("PV\x00")), 1, false, &camera.PV[0])
+	gl.UniformMatrix4fv(gl.GetUniformLocation(lbuffer.programID, gl.Str("PV\x00")), 1, false, &PV[0])
 
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, gbuffer.colorTexture)

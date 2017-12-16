@@ -13,6 +13,7 @@ type Torch struct {
 	M      mgl32.Mat4
 	center mgl32.Vec3
 	color  mgl32.Vec4
+	R      float32
 
 	prevAnimation uint32
 	prevDirection uint32
@@ -23,6 +24,7 @@ func NewTorch(model *Model) *Torch {
 	torch := new(Torch)
 	torch.model = model
 	torch.M = mgl32.Ident4()
+	torch.R = 1
 	torch.direction = newDirection()
 
 	return torch
@@ -46,6 +48,8 @@ func (torch *Torch) draw(programID uint32) {
 	gl.EnableVertexAttribArray(Vertex)
 	gl.VertexAttribPointer(Vertex, 3, gl.FLOAT, false, 0, gl.PtrOffset(0))
 
+	// set radius
+	gl.Uniform1f(gl.GetUniformLocation(programID, gl.Str("R\x00")), torch.R)
 	// set color
 	gl.Uniform4fv(gl.GetUniformLocation(programID, gl.Str("Color\x00")), 1, &torch.color[0])
 	// set center
@@ -59,6 +63,7 @@ func (torch *Torch) draw(programID uint32) {
 }
 
 func (torch *Torch) Scale(s float32) {
+	torch.R *= s
 	torch.M = mgl32.Scale3D(s, s, s).Mul4(torch.M)
 }
 
@@ -75,7 +80,10 @@ func (torch *Torch) Animate() {
 		torch.Move(torch.direction.X(), torch.direction.Y(), torch.direction.Z())
 	}
 
-	if torch.center.Len() > 30 || now-torch.prevDirection > 500 {
+	if torch.center.X() < -5 || torch.center.X() > 5 ||
+		torch.center.Z() < -5 || torch.center.Z() > 5 ||
+		torch.center.Y() < -1 || torch.center.Y() > 3 ||
+		now-torch.prevDirection > 500 {
 		torch.prevDirection = now
 
 		for {

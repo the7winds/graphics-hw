@@ -16,6 +16,7 @@ const (
 	COLOR
 	NORMA
 	DEPTH
+	VOLUMES
 )
 
 type Scene struct {
@@ -57,6 +58,9 @@ func (scene *Scene) keyCallback(w *glfw.Window, key glfw.Key, scancode int, acti
 	} else if key == glfw.Key3 {
 		scene.mode = DEPTH
 		fmt.Println("set DEPTH mode", scene.mode)
+	} else if key == glfw.Key4 {
+		scene.mode = VOLUMES
+		fmt.Println("set VOLUMES mode", scene.mode)
 	}
 }
 
@@ -122,7 +126,7 @@ func (scene *Scene) render() error {
 		return err
 	}
 
-	if err := scene.lbuffer.render(&scene.gbuffer, &scene.camera); err != nil {
+	if err := scene.lbuffer.render(&scene.gbuffer, &scene.camera.PV); err != nil {
 		return err
 	}
 
@@ -155,6 +159,10 @@ func (scene *Scene) display() error {
 	gl.ActiveTexture(gl.TEXTURE3)
 	gl.BindTexture(gl.TEXTURE_2D, scene.lbuffer.lightTexture)
 	gl.Uniform1i(gl.GetUniformLocation(scene.displayID, gl.Str("TexLight\x00")), 3)
+
+	gl.ActiveTexture(gl.TEXTURE4)
+	gl.BindTexture(gl.TEXTURE_2D, scene.lbuffer.volumesTexture)
+	gl.Uniform1i(gl.GetUniformLocation(scene.displayID, gl.Str("TexVolumes\x00")), 4)
 
 	scene.screen.draw(scene.displayID)
 

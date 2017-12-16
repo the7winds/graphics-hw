@@ -8,7 +8,7 @@ uniform sampler2D TexColor;
 uniform sampler2D TexNorma;
 uniform sampler2D TexDepth;
 uniform sampler2D TexLight;
-uniform sampler2D TexPos;
+uniform sampler2D TexVolumes;
 
 out vec4 fragColor;
 
@@ -23,5 +23,7 @@ void main() {
         float depth = texture(TexDepth, tpos).x;
         vec3 depthc = vec3(depth);
         fragColor = vec4(depthc, 1);
+    } else if (Mode == 4) {
+        fragColor = texture(TexVolumes, tpos);
     }
 }
