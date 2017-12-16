@@ -5,3 +5,4 @@ Usage:
 * 1 - color map
 * 2 - normal map
 * 3 - depth map
+* 4 - light volumes
