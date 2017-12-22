@@ -47,7 +47,7 @@ func (w *Wave) initBuffers() {
 
 	gl.GenTextures(1, &w.tex)
 	gl.BindTexture(gl.TEXTURE_2D, w.tex)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, texWidth, texHeight, 0, gl.RED, gl.FLOAT, nil)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.R16F, texWidth, texHeight, 0, gl.RED, gl.FLOAT, nil)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
@@ -91,7 +91,7 @@ func (w *Wave) Animate() {
 func (w *Wave) Render() error {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, w.fbo)
 	gl.Viewport(0, 0, texWidth, texHeight)
-	gl.ClearColor(0.5, 0, 0, 0)
+	gl.ClearColor(0, 0, 0, 0)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(w.programID)
