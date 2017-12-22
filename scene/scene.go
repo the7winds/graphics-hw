@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"image/jpeg"
+	"math"
 	"os"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -243,4 +244,29 @@ func (scene *Scene) TexNorma() uint32 {
 
 func (scene *Scene) TexHeight() uint32 {
 	return scene.dynamicTexture.Tex()
+}
+
+func (scene *Scene) EmitAt(source, direction mgl32.Vec3) {
+	pos := source
+	for math.Abs(float64(pos.Y())) > 0.001 {
+		if pos.Y() > 0 && direction.Y() > 0 || pos.Y() < 0 && direction.Y() < 0 {
+			direction = direction.Mul(-0.5)
+		}
+
+		pos = pos.Add(direction)
+	}
+
+	scene.dynamicTexture.EmitAt(pos.X()/5, pos.Z()/5)
+}
+
+func (scene *Scene) SetAutogenMode(auto bool) {
+	if auto {
+		scene.dynamicTexture.AutogenOnly()
+	} else {
+		scene.dynamicTexture.UserOnly()
+	}
+}
+
+func (scene *Scene) SetPause(pause bool) {
+	scene.dynamicTexture.Pause = pause
 }

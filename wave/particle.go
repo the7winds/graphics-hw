@@ -11,18 +11,29 @@ import (
 )
 
 type particle struct {
+	x, y   float32
 	stamp  int64
 	time   int
 	period int
 	obj    *model.Object
 }
 
-func newParticle(x, y float32, m *model.Model) *particle {
+func newRandomStampedParticle(x, y float32, m *model.Model) *particle {
 	p := new(particle)
 	p.obj = m.NewObject()
 	p.obj.M = mgl32.Translate3D(x, y, 0).Mul4(p.obj.M)
 	p.period = 120
 	p.time = rand.Int() % 120
+	return p
+}
+
+func newParticle(x, y float32, m *model.Model) *particle {
+	p := new(particle)
+	p.obj = m.NewObject()
+	p.x, p.y = x, y
+	p.obj.M = mgl32.Translate3D(x, y, 0).Mul4(p.obj.M)
+	p.period = 120
+	p.time = 0
 	return p
 }
 

@@ -21,10 +21,16 @@ const (
 )
 
 type Screen struct {
+	// fields related to camera
 	camera        *camera.Camera
 	isRotatingNow bool
 	xpos          float32
 	ypos          float32
+
+	// fields connected with waves emition
+	pause      bool
+	emition    bool
+	emitterPos mgl32.Vec3
 
 	// display screen
 	screen    *model.Object
@@ -92,4 +98,9 @@ func (screen *Screen) display() error {
 	screen.screen.Draw(screen.displayID)
 
 	return utils.CheckGlError("can't display")
+}
+
+func (screen *Screen) setPause(pause bool) {
+	screen.pause = pause
+	screen.scene.SetPause(pause)
 }

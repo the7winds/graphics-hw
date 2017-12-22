@@ -82,3 +82,10 @@ func (camera *Camera) MoveEyeLeft() {
 func (camera *Camera) Eye() mgl32.Vec3 {
 	return camera.eye
 }
+
+func (Camera *Camera) ScreenToWorld(screenX, screenY float32) mgl32.Vec3 {
+	v := mgl32.Vec4{screenX, screenY, -1, 1}
+	w := Camera.PV.Inv().Mul4x1(v)
+	w = w.Mul(1 / w.W())
+	return mgl32.Vec3{w.X(), w.Y(), w.Z()}
+}

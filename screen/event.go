@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/the7winds/graphics-hw/consts"
 )
 
 func (screen *Screen) KeyCallback(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -28,6 +29,28 @@ func (screen *Screen) KeyCallback(w *glfw.Window, key glfw.Key, scancode int, ac
 	case glfw.Key3:
 		screen.mode = heightMode
 		fmt.Println("set HEIGHT mode", screen.mode)
+	}
+
+	if action == glfw.Press {
+		switch key {
+		case glfw.KeyLeftShift:
+			screen.emition = !screen.emition
+			if screen.emition {
+				screen.scene.SetAutogenMode(false)
+				fmt.Println("set USER EMITION mode")
+			} else {
+				screen.scene.SetAutogenMode(true)
+				screen.setPause(false)
+				fmt.Println("set AUTO EMITION mode")
+			}
+		case glfw.KeySpace:
+			screen.setPause(!screen.pause)
+			if screen.pause {
+				fmt.Println("EMITION PAUSED")
+			} else {
+				fmt.Println("EMITION CONTINUED")
+			}
+		}
 	}
 }
 
@@ -54,5 +77,14 @@ func (screen *Screen) CursorPosCallback(w *glfw.Window, xpos float64, ypos float
 		screen.xpos, screen.ypos = xpos, ypos
 
 		screen.camera.Rotate(dX, dY)
+	}
+
+	if !screen.pause && screen.emition {
+		e := screen.camera.Eye()
+		x, y := w.GetCursorPos()
+		x = 2*x/consts.WIDTH - 1
+		y = 1 - 2*y/consts.HEIGHT
+		p := screen.camera.ScreenToWorld(float32(x), float32(y))
+		screen.scene.EmitAt(e, p.Sub(e).Normalize())
 	}
 }

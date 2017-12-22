@@ -22,22 +22,21 @@ type Wave struct {
 
 	programID uint32
 
+	Pause bool
+
 	model     *model.Model
 	particles []*particle
+	extra     []*particle
 }
 
 func (w *Wave) genParticles() {
-	w.particles = append(w.particles, newParticle(0.5, 0.5, w.model))
-	w.particles = append(w.particles, newParticle(0, 0, w.model))
-	w.particles = append(w.particles, newParticle(-0.1, -0.5, w.model))
-
 	delta := 1.57
-	n := 100
+	n := 20
 	for i := 0; i < n; i++ {
 		p := 2 * math.Pi * float64(i) / float64(n-1)
 		x := 0.9 * math.Sin(1*p+delta)
 		y := 0.9 * math.Sin(2*p)
-		w.particles = append(w.particles, newParticle(float32(x), float32(y), w.model))
+		w.particles = append(w.particles, newRandomStampedParticle(float32(x), float32(y), w.model))
 	}
 }
 
@@ -83,7 +82,24 @@ func (w *Wave) Free() {
 }
 
 func (w *Wave) Animate() {
+	if w.Pause {
+		return
+	}
+
 	for _, p := range w.particles {
+		p.animate()
+	}
+
+	tmp := w.extra
+	w.extra = nil
+
+	for _, p := range tmp {
+		if p.time+1 != p.period {
+			w.extra = append(w.extra, p)
+		}
+	}
+
+	for _, p := range w.extra {
 		p.animate()
 	}
 }
@@ -107,9 +123,35 @@ func (w *Wave) Render() error {
 		p.draw(w.programID)
 	}
 
+	for _, p := range w.extra {
+		p.draw(w.programID)
+	}
+
 	return utils.CheckGlError("can't render wave-Buffer")
 }
 
 func (w *Wave) Tex() uint32 {
 	return w.tex
+}
+
+func (w *Wave) EmitAt(x, y float32) {
+	if len(w.extra) > 0 {
+		last := w.extra[len(w.extra)-1]
+		if math.Abs(float64(last.x-x)) < 0.02 && math.Abs(float64(last.y-y)) < 0.02 {
+			if last.time < last.period/10 {
+				return
+			}
+		}
+	}
+	w.extra = append(w.extra, newParticle(x, y, w.model))
+}
+
+func (w *Wave) AutogenOnly() {
+	w.extra = nil
+	w.genParticles()
+}
+
+func (w *Wave) UserOnly() {
+	w.particles = nil
+	w.Pause = false
 }
