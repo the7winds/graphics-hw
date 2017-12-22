@@ -6,10 +6,11 @@ in vec2 pos;
 out float waveHeight;
 
 void main() {
-    float rt = 10 * Time;
-    float r  = 10 * length(pos);
+    float rt = Time;
+    float r  = length(pos);
+    float d  = rt - r;
 
-    float v = float(abs(rt - r) < 0.3);
+    float v = float(abs(d) < 0.01);
 
-    waveHeight = v * pow(2.7, -2 * r) * sin((rt - r));
+    waveHeight = v * pow(2.7, -30 * r) * sin(314 * d);
 }
