@@ -40,7 +40,9 @@ vec3 light() {
 }
 
 void main() {
-    texRender = texture(TexEnv, pos - CameraPos).rgb * light();
-    texNorma  = evalNorma();
-    texColor  = texture(TexEnv, pos - CameraPos).rgb;
+    vec3 n = evalNorma();
+    vec3 l = reflect(pos - CameraPos, n);
+    texRender = texture(TexEnv, l).rgb;
+    texNorma  = n;
+    texColor  = light();
 }

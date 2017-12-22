@@ -130,12 +130,12 @@ func (scene *Scene) loadCubeMap() {
 	gl.TexParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE)
 
 	texNames := []string{
-		"environment/cstormydays_bk.jpg",
-		"environment/cstormydays_ft.jpg",
+		"environment/cstormydays_rt.jpg",
+		"environment/cstormydays_lf.jpg",
 		"environment/cstormydays_up.jpg",
 		"environment/cstormydays_dn.jpg",
-		"environment/cstormydays_lf.jpg",
-		"environment/cstormydays_rt.jpg",
+		"environment/cstormydays_bk.jpg",
+		"environment/cstormydays_ft.jpg",
 	}
 
 	targets := []uint32{
